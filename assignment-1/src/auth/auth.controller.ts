@@ -3,6 +3,7 @@ import { AuthService, TokenPair } from './auth.service.js';
 import { UserResponseDto } from './dto/user-response.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 
 @Controller('auth')
 export class AuthController {
@@ -17,5 +18,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() dto: LoginDto): Promise<TokenPair> {
     return this.authService.login(dto);
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Body() dto: RefreshTokenDto): Promise<TokenPair> {
+    return this.authService.refreshToken(dto.refresh_token);
   }
 }

@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
@@ -29,6 +29,7 @@ export class AuthService {
     private readonly refreshTokenRepository: Repository<RefreshToken>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly dataSource: DataSource
   ) {}
 
   async register(dto: RegisterDto): Promise<UserResponseDto> {
@@ -79,8 +80,8 @@ export class AuthService {
       sub: user.id,
       email: user.email,
     });
-    const refresh_token = crypto.randomBytes(64).toString('hex');
-    const token_hash = await argon2.hash(refresh_token);
+    const rawSecret = crypto.randomBytes(64).toString('hex');
+    const token_hash = await argon2.hash(rawSecret);
 
     const expiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN')!;
     const expires_at = new Date(Date.now() + this.parseDuration(expiresIn));
@@ -90,7 +91,9 @@ export class AuthService {
       token_hash,
       expires_at,
     });
-    await this.refreshTokenRepository.save(refreshTokenEntity);
+    const saved = await this.refreshTokenRepository.save(refreshTokenEntity);
+
+    const refresh_token = `${saved.id}.${rawSecret}`;
 
     return { access_token, refresh_token };
   }
@@ -106,5 +109,65 @@ export class AuthService {
       d: 24 * 60 * 60 * 1000,
     };
     return Number(value) * multipliers[unit];
+  }
+
+  async refreshToken(rawToken: string) {
+    const [idPart, secretPart] = rawToken.split('.');
+    const tokenId = Number(idPart);
+
+    if (!tokenId || !secretPart) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const tokenRow = await this.refreshTokenRepository.findOne({
+      where: { id: tokenId },
+      relations: { user: true },
+    });
+    if (!tokenRow) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const secretValid = await argon2.verify(tokenRow.token_hash, secretPart);
+    if (!secretValid) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (tokenRow.revoked_at) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (tokenRow.expires_at.getTime() < Date.now()) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    return this.dataSource.transaction(async (manager) => {
+      await manager.update(RefreshToken, tokenRow.id, {
+        revoked_at: new Date(),
+      });
+
+      const access_token = await this.jwtService.signAsync({
+        sub: tokenRow.user.id,
+        email: tokenRow.user.email,
+      });
+
+      const rawSecret = crypto.randomBytes(64).toString('hex');
+      const token_hash = await argon2.hash(rawSecret);
+
+      const expiresIn = this.configService.get<string>(
+        'JWT_REFRESH_EXPIRES_IN',
+      )!;
+      const expires_at = new Date(Date.now() + this.parseDuration(expiresIn));
+
+      const newTokenEntity = manager.create(RefreshToken, {
+        user_id: tokenRow.user.id,
+        token_hash,
+        expires_at,
+      });
+      const saved = await manager.save(newTokenEntity);
+
+      const refresh_token = `${saved.id}.${rawSecret}`;
+
+      return { access_token, refresh_token };
+    });
   }
 }
