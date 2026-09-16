@@ -5,6 +5,7 @@ import Joi from 'joi';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { dataSourceOptions } from './data-source.js';
+import { AuthModule } from './auth/auth.module.js';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { dataSourceOptions } from './data-source.js';
       }),
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
