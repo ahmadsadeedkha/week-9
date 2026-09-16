@@ -1,16 +1,34 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/User.js';
-import { RegisterDto } from './dto/register.dto.js';
-import { UserResponseDto } from './dto/user-response.dto.js';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
+import * as crypto from 'crypto';
+import { User } from '../entities/User.js';
+import { RefreshToken } from '../entities/RefreshToken.js';
+import { RegisterDto } from './dto/register.dto.js';
+import { LoginDto } from './dto/login.dto.js';
+import { UserResponseDto } from './dto/user-response.dto.js';
+
+export interface TokenPair {
+  access_token: string;
+  refresh_token: string;
+}
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(RefreshToken)
+    private readonly refreshTokenRepository: Repository<RefreshToken>,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(dto: RegisterDto): Promise<UserResponseDto> {
@@ -36,5 +54,57 @@ export class AuthService {
       email: saved.email,
       created_at: saved.created_at,
     });
+  }
+
+  async login(dto: LoginDto): Promise<TokenPair> {
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password_hash')
+      .where('user.email = :email', { email: dto.email })
+      .getOne();
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    const passwordValid = await argon2.verify(user.password_hash, dto.password);
+    if (!passwordValid) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    return this.issueTokenPair(user);
+  }
+
+  private async issueTokenPair(user: User): Promise<TokenPair> {
+    const access_token = await this.jwtService.signAsync({
+      sub: user.id,
+      email: user.email,
+    });
+    const refresh_token = crypto.randomBytes(64).toString('hex');
+    const token_hash = await argon2.hash(refresh_token);
+
+    const expiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN')!;
+    const expires_at = new Date(Date.now() + this.parseDuration(expiresIn));
+
+    const refreshTokenEntity = this.refreshTokenRepository.create({
+      user_id: user.id,
+      token_hash,
+      expires_at,
+    });
+    await this.refreshTokenRepository.save(refreshTokenEntity);
+
+    return { access_token, refresh_token };
+  }
+
+  private parseDuration(duration: string): number {
+    const match = duration.match(/^(\d+)([smhd])$/);
+    if (!match) throw new Error(`Invalid duration format: ${duration}`);
+    const [, value, unit] = match;
+    const multipliers: Record<string, number> = {
+      s: 1000,
+      m: 60 * 1000,
+      h: 60 * 60 * 1000,
+      d: 24 * 60 * 60 * 1000,
+    };
+    return Number(value) * multipliers[unit];
   }
 }

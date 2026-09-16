@@ -32,7 +32,6 @@ export const dataSourceOptions: DataSourceOptions = {
   synchronize: false,
   logging: false,
   entities,
-
   subscribers: [],
 };
 
