@@ -29,7 +29,7 @@ export class AuthService {
     private readonly refreshTokenRepository: Repository<RefreshToken>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly dataSource: DataSource
+    private readonly dataSource: DataSource,
   ) {}
 
   async register(dto: RegisterDto): Promise<UserResponseDto> {
@@ -112,33 +112,7 @@ export class AuthService {
   }
 
   async refreshToken(rawToken: string) {
-    const [idPart, secretPart] = rawToken.split('.');
-    const tokenId = Number(idPart);
-
-    if (!tokenId || !secretPart) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
-    const tokenRow = await this.refreshTokenRepository.findOne({
-      where: { id: tokenId },
-      relations: { user: true },
-    });
-    if (!tokenRow) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
-    const secretValid = await argon2.verify(tokenRow.token_hash, secretPart);
-    if (!secretValid) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
-    if (tokenRow.revoked_at) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
-    if (tokenRow.expires_at.getTime() < Date.now()) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
+    const tokenRow = await this.findAndValidateToken(rawToken);
 
     return this.dataSource.transaction(async (manager) => {
       await manager.update(RefreshToken, tokenRow.id, {
@@ -169,5 +143,45 @@ export class AuthService {
 
       return { access_token, refresh_token };
     });
+  }
+
+  async logout(rawToken: string): Promise<void> {
+    const tokenRow = await this.findAndValidateToken(rawToken);
+
+    await this.refreshTokenRepository.update(tokenRow.id, {
+      revoked_at: new Date(),
+    });
+  }
+
+  private async findAndValidateToken(rawToken: string): Promise<RefreshToken> {
+    const [idPart, secretPart] = rawToken.split('.');
+    const tokenId = Number(idPart);
+
+    if (!tokenId || !secretPart) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const tokenRow = await this.refreshTokenRepository.findOne({
+      where: { id: tokenId },
+      relations: { user: true },
+    });
+    if (!tokenRow) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const secretValid = await argon2.verify(tokenRow.token_hash, secretPart);
+    if (!secretValid) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (tokenRow.revoked_at) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (tokenRow.expires_at.getTime() < Date.now()) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    return tokenRow;
   }
 }
