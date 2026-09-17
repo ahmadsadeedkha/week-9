@@ -111,7 +111,7 @@ export class AuthService {
     return Number(value) * multipliers[unit];
   }
 
-  async refreshToken(rawToken: string) {
+  async refresh(rawToken: string) {
     const tokenRow = await this.findAndValidateToken(rawToken);
 
     return this.dataSource.transaction(async (manager) => {
