@@ -6,10 +6,13 @@ import { User } from '../entities/User.js';
 import { RefreshToken } from '../entities/RefreshToken.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './jwt.strategy.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, RefreshToken]),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -22,6 +25,7 @@ import { AuthService } from './auth.service.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
+  exports: [PassportModule, JwtStrategy],
 })
 export class AuthModule {}
