@@ -17,6 +17,10 @@ import {
   CurrentUser,
   type CurrentUserPayload,
 } from '../auth/decorators/current-user.decorator.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { ProjectRole } from '../entities/Enums.js';
+import { ProjectSourceFrom } from '../auth/decorators/project-source.decorator.js';
 
 @UseGuards(JwtAuthGuard)
 @Controller('projects')
@@ -32,6 +36,9 @@ export class ProjectsWriteController {
   }
 
   @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles(ProjectRole.OWNER, ProjectRole.ADMIN)
+  @ProjectSourceFrom({ type: 'route-param', param: 'id' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateProjectDto,
@@ -41,6 +48,9 @@ export class ProjectsWriteController {
   }
 
   @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(ProjectRole.OWNER, ProjectRole.ADMIN)
+  @ProjectSourceFrom({ type: 'route-param', param: 'id' })
   @HttpCode(204)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.projectsService.remove(id);
