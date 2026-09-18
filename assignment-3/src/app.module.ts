@@ -9,6 +9,8 @@ import { TasksModule } from './tasks/tasks.module.js';
 import { ProjectsModule } from './projects/projects.module.js';
 import { UsersModule } from './users/users.module.js';
 import { CommentsModule } from './comments/comments.module.js';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -30,8 +32,15 @@ import { CommentsModule } from './comments/comments.module.js';
     ProjectsModule,
     UsersModule,
     CommentsModule,
+    ThrottlerModule.forRoot([
+      {
+        name: 'global',
+        ttl: 60000, // 1 minute window
+        limit: 100, // generous — this is the general per-IP ceiling
+      },
+    ]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
