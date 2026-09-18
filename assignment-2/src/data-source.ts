@@ -8,6 +8,7 @@ import { Project } from './entities/Project.js';
 import { Task } from './entities/Task.js';
 import { Tag } from './entities/Tag.js';
 import { Comment } from './entities/Comment.js';
+import { ProjectMember } from './entities/ProjectMember.js';
 import { RefreshToken } from './entities/RefreshToken.js';
 
 function getEnv(name: string): string {
@@ -20,7 +21,15 @@ function getEnv(name: string): string {
   return value;
 }
 
-const entities = [User, Project, Task, Tag, Comment, RefreshToken];
+const entities = [
+  User,
+  Project,
+  Task,
+  Tag,
+  Comment,
+  ProjectMember,
+  RefreshToken,
+];
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',

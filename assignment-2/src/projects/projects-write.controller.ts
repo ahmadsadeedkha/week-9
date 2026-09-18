@@ -42,9 +42,8 @@ export class ProjectsWriteController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateProjectDto,
-    @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.projectsService.update(id, dto, user.userId);
+    return this.projectsService.update(id, dto);
   }
 
   @Delete(':id')
