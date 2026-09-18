@@ -10,6 +10,10 @@ import { TasksService } from './tasks.service.js';
 import { CreateCommentDto } from '../comments/dto/create-comment.dto.js';
 import { CreateTaskDto } from './dto/create-task.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import {
+  CurrentUser,
+  type CurrentUserPayload,
+} from '../auth/decorators/current-user.decorator.js';
 
 @UseGuards(JwtAuthGuard)
 @Controller('tasks')
@@ -25,7 +29,8 @@ export class TasksWriteController {
   addComment(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateCommentDto,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.tasksService.addComment(id, dto);
+    return this.tasksService.addComment(id, dto, user.userId);
   }
 }

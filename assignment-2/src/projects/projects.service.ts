@@ -15,10 +15,10 @@ export class ProjectsService {
     private readonly userRepo: Repository<User>,
   ) {}
 
-  async create(dto: CreateProjectDto): Promise<Project> {
-    const owner = await this.userRepo.findOneBy({ id: dto.ownerId });
+  async create(dto: CreateProjectDto, ownerId: number): Promise<Project> {
+    const owner = await this.userRepo.findOneBy({ id: ownerId });
     if (!owner) {
-      throw new NotFoundException(`User ${dto.ownerId} not found`);
+      throw new NotFoundException(`User ${ownerId} not found`);
     }
 
     const project = this.projectRepo.create({
@@ -40,12 +40,12 @@ export class ProjectsService {
     return project;
   }
 
-  async update(id: number, dto: UpdateProjectDto): Promise<Project> {
+  async update(id: number, dto: UpdateProjectDto, ownerId: number): Promise<Project> {
     const project = await this.findOne(id);
-    if (dto.ownerId !== undefined) {
-      const owner = await this.userRepo.findOneBy({ id: dto.ownerId });
+    if (ownerId !== undefined) {
+      const owner = await this.userRepo.findOneBy({ id: ownerId });
       if (!owner) {
-        throw new NotFoundException(`User ${dto.ownerId} not found`);
+        throw new NotFoundException(`User ${ownerId} not found`);
       }
       project.owner = owner;
     }

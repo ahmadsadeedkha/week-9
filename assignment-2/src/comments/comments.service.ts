@@ -28,10 +28,14 @@ export class CommentsService {
     return { items, total, page: Math.max(page, 1), pageSize: take };
   }
 
-  async createForTask(dto: CreateCommentDto, task: Task): Promise<Comment> {
-    const author = await this.userRepo.findOneBy({ id: dto.authorId });
+  async createForTask(
+    dto: CreateCommentDto,
+    task: Task,
+    authorId: number,
+  ): Promise<Comment> {
+    const author = await this.userRepo.findOneBy({ id: authorId });
     if (!author) {
-      throw new NotFoundException(`User ${dto.authorId} not found`);
+      throw new NotFoundException(`User ${authorId} not found`);
     }
 
     const comment = this.commentRepo.create({
