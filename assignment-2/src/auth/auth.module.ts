@@ -8,10 +8,13 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy.js';
+import { RolesGuard } from './guards/roles.guard.js';
+import { ProjectMember } from '../entities/ProjectMember.js';
+import { Task } from '../entities/Task.js';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, RefreshToken]),
+    TypeOrmModule.forFeature([User, RefreshToken, ProjectMember, Task]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -25,7 +28,7 @@ import { JwtStrategy } from './jwt.strategy.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [PassportModule, JwtStrategy],
+  providers: [AuthService, JwtStrategy, RolesGuard],
+  exports: [PassportModule, JwtStrategy, RolesGuard],
 })
 export class AuthModule {}

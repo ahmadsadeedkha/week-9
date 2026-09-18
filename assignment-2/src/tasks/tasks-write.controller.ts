@@ -14,6 +14,10 @@ import {
   CurrentUser,
   type CurrentUserPayload,
 } from '../auth/decorators/current-user.decorator.js';
+import { ProjectRole } from '../entities/Enums.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { ProjectSourceFrom } from '../auth/decorators/project-source.decorator.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
 
 @UseGuards(JwtAuthGuard)
 @Controller('tasks')
@@ -21,11 +25,17 @@ export class TasksWriteController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles(ProjectRole.OWNER, ProjectRole.ADMIN, ProjectRole.MEMBER)
+  @ProjectSourceFrom({ type: 'body-field', field: 'projectId' })
   createTask(@Body() dto: CreateTaskDto) {
     return this.tasksService.create(dto);
   }
 
   @Post(':id/comments')
+  @UseGuards(RolesGuard)
+  @Roles(ProjectRole.OWNER, ProjectRole.ADMIN, ProjectRole.MEMBER)
+  @ProjectSourceFrom({ type: 'task-param', param: 'id' })
   addComment(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateCommentDto,
