@@ -1,4 +1,4 @@
-# OWASP Top 10 (2021) — Mapping to This API
+# OWASP Top 10 — Mapping to This API
 
 This document maps each OWASP Top 10 category to the concrete mechanism in this
 codebase that mitigates it, or explains why it is not applicable. Each entry
@@ -157,5 +157,5 @@ sustained credential-stuffing attempt, a pattern of 403s probing for
 cross-project access, or a burst of rate-limit trips would only be noticed
 by someone actively watching request logs in real time, not through any
 alerting or dashboard. Given how much of this assignment's effort went into
-*enforcing* access control correctly, the corresponding blind spot is that
-we would not reliably *notice* a sustained attempt to defeat it.
+_enforcing_ access control correctly, the corresponding blind spot is that
+we would not reliably _notice_ a sustained attempt to defeat it.

@@ -36,7 +36,7 @@ import { APP_GUARD } from '@nestjs/core';
     CommentsModule,
     ThrottlerModule.forRoot([
       {
-        name: 'global',
+        name: 'default',
         ttl: 60000, // 1 minute window
         limit: 100, // generous — this is the general per-IP ceiling
       },
