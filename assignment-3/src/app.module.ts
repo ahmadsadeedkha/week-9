@@ -17,6 +17,7 @@ import { APP_GUARD } from '@nestjs/core';
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
+        PORT: Joi.number().default(3000),
         DB_HOST: Joi.string().required(),
         DB_PORT: Joi.number().default(5432),
         DB_USERNAME: Joi.string().required(),
@@ -25,6 +26,7 @@ import { APP_GUARD } from '@nestjs/core';
         JWT_SECRET: Joi.string().required(),
         JWT_ACCESS_EXPIRES_IN: Joi.string().default('15m'),
         JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
+        CORS_ORIGIN: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
