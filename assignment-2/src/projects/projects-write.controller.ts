@@ -12,7 +12,6 @@ import {
 import { ProjectsService } from './projects.service.js';
 import { CreateProjectDto } from './dto/create-project.dto.js';
 import { UpdateProjectDto } from './dto/update-project.dto.js';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import {
   CurrentUser,
   type CurrentUserPayload,
@@ -22,7 +21,6 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { ProjectRole } from '../entities/Enums.js';
 import { ProjectSourceFrom } from '../auth/decorators/project-source.decorator.js';
 
-@UseGuards(JwtAuthGuard)
 @Controller('projects')
 export class ProjectsWriteController {
   constructor(private readonly projectsService: ProjectsService) {}
@@ -39,10 +37,7 @@ export class ProjectsWriteController {
   @UseGuards(RolesGuard)
   @Roles(ProjectRole.OWNER, ProjectRole.ADMIN)
   @ProjectSourceFrom({ type: 'route-param', param: 'id' })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateProjectDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProjectDto) {
     return this.projectsService.update(id, dto);
   }
 

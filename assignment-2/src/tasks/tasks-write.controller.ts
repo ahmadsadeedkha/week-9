@@ -9,7 +9,6 @@ import {
 import { TasksService } from './tasks.service.js';
 import { CreateCommentDto } from '../comments/dto/create-comment.dto.js';
 import { CreateTaskDto } from './dto/create-task.dto.js';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import {
   CurrentUser,
   type CurrentUserPayload,
@@ -19,7 +18,6 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { ProjectSourceFrom } from '../auth/decorators/project-source.decorator.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 
-@UseGuards(JwtAuthGuard)
 @Controller('tasks')
 export class TasksWriteController {
   constructor(private readonly tasksService: TasksService) {}

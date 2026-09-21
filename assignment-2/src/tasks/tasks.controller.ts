@@ -1,23 +1,18 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  ParseIntPipe,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { TasksService } from './tasks.service.js';
+import { Public } from '../auth/decorators/public.decorator.js';
 
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
+  @Public()
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.tasksService.findOne(id);
   }
 
+  @Public()
   @Get(':id/comments')
   findComments(
     @Param('id', ParseIntPipe) id: number,
