@@ -1,26 +1,19 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  ParseIntPipe,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { TasksService } from './tasks.service.js';
+import { PositiveIntPipe } from '../common/pipes/positive-int.pipe.js';
 
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', PositiveIntPipe) id: number) {
     return this.tasksService.findOne(id);
   }
 
   @Get(':id/comments')
   findComments(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', PositiveIntPipe) id: number,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {

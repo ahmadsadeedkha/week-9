@@ -5,7 +5,6 @@ import {
   Delete,
   Param,
   Body,
-  ParseIntPipe,
   HttpCode,
   UseGuards,
 } from '@nestjs/common';
@@ -21,6 +20,7 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { ProjectRole } from '../entities/Enums.js';
 import { ProjectSourceFrom } from '../auth/decorators/project-source.decorator.js';
+import { PositiveIntPipe } from '../common/pipes/positive-int.pipe.js';
 
 @UseGuards(JwtAuthGuard)
 @Controller('projects')
@@ -40,7 +40,7 @@ export class ProjectsWriteController {
   @Roles(ProjectRole.OWNER, ProjectRole.ADMIN)
   @ProjectSourceFrom({ type: 'route-param', param: 'id' })
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', PositiveIntPipe) id: number,
     @Body() dto: UpdateProjectDto,
   ) {
     return this.projectsService.update(id, dto);
@@ -51,7 +51,7 @@ export class ProjectsWriteController {
   @Roles(ProjectRole.OWNER, ProjectRole.ADMIN)
   @ProjectSourceFrom({ type: 'route-param', param: 'id' })
   @HttpCode(204)
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id', PositiveIntPipe) id: number) {
     return this.projectsService.remove(id);
   }
 }

@@ -1,15 +1,10 @@
 import {
   Controller,
   Get,
-  Post,
-  Patch,
-  Delete,
   Param,
-  Body,
-  ParseIntPipe,
-  HttpCode,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service.js';
+import { PositiveIntPipe } from '../common/pipes/positive-int.pipe.js';
 
 @Controller('projects')
 export class ProjectsController {
@@ -21,7 +16,7 @@ export class ProjectsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', PositiveIntPipe) id: number) {
     return this.projectsService.findOne(id);
   }
 }
