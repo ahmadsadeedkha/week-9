@@ -32,6 +32,14 @@ export class AuthService {
     private readonly dataSource: DataSource,
   ) {}
 
+  private getArgon2Options() {
+    return {
+      memoryCost: this.configService.get<number>('ARGON2_MEMORY_COST')!,
+      timeCost: this.configService.get<number>('ARGON2_TIME_COST')!,
+      parallelism: this.configService.get<number>('ARGON2_PARALLELISM')!,
+    };
+  }
+
   async register(dto: RegisterDto): Promise<UserResponseDto> {
     const existing = await this.userRepository.findOne({
       where: { email: dto.email },
@@ -40,7 +48,10 @@ export class AuthService {
       throw new ConflictException('Email already in use');
     }
 
-    const password_hash = await argon2.hash(dto.password);
+    const password_hash = await argon2.hash(
+      dto.password,
+      this.getArgon2Options(),
+    );
 
     const user = this.userRepository.create({
       name: dto.name,
@@ -81,7 +92,7 @@ export class AuthService {
       email: user.email,
     });
     const rawSecret = crypto.randomBytes(64).toString('hex');
-    const token_hash = await argon2.hash(rawSecret);
+    const token_hash = await argon2.hash(rawSecret, this.getArgon2Options());
 
     const expiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN')!;
     const expires_at = new Date(Date.now() + this.parseDuration(expiresIn));

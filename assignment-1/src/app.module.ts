@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module.js';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
       validationSchema: Joi.object({
         DB_HOST: Joi.string().required(),
         DB_PORT: Joi.number().default(5432),
@@ -20,6 +21,9 @@ import { AuthModule } from './auth/auth.module.js';
         JWT_SECRET: Joi.string().required(),
         JWT_ACCESS_EXPIRES_IN: Joi.string().default('15m'),
         JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
+        ARGON2_MEMORY_COST: Joi.number().default(65536),
+        ARGON2_TIME_COST: Joi.number().default(3),
+        ARGON2_PARALLELISM: Joi.number().default(4),
       }),
     }),
     TypeOrmModule.forRoot(dataSourceOptions),

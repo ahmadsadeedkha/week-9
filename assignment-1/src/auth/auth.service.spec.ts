@@ -33,8 +33,13 @@ describe('AuthService', () => {
 
     configService = {
       get: vi.fn((key: string) => {
-        if (key === 'JWT_REFRESH_EXPIRES_IN') return '7d';
-        return undefined;
+        const values: Record<string, any> = {
+          JWT_REFRESH_EXPIRES_IN: '7d',
+          ARGON2_MEMORY_COST: 1024,
+          ARGON2_TIME_COST: 1,
+          ARGON2_PARALLELISM: 1,
+        };
+        return values[key];
       }),
     };
 
