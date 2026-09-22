@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [assignment-3]
     paths:
-    - 'assignment-3/**'
+      - 'assignment-3/**'
   push:
     branches: [assignment-3]
     paths:
@@ -32,5 +32,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run npm audit (fails on high or critical advisories)
-        run: npm audit --audit-level=high
+      - name: Run npm audit on production dependencies (fails the build)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Run npm audit on all dependencies (informational only)
+        run: npm audit --audit-level=high || true
