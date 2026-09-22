@@ -2,6 +2,7 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Inject,
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -15,6 +16,9 @@ import {
   PROJECT_SOURCE_KEY,
   ProjectSource,
 } from '../decorators/project-source.decorator.js';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { type Cache } from 'cache-manager';
+
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -24,6 +28,7 @@ export class RolesGuard implements CanActivate {
     private readonly projectMemberRepo: Repository<ProjectMember>,
     @InjectRepository(Task)
     private readonly taskRepo: Repository<Task>,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -52,9 +57,7 @@ export class RolesGuard implements CanActivate {
 
     const projectId = await this.resolveProjectId(projectSource, request);
 
-    const membership = await this.projectMemberRepo.findOne({
-      where: { project_id: projectId, user_id: user.userId },
-    });
+    const membership = await this.getMembership(projectId,  user.userId);
 
     if (!membership) {
       throw new ForbiddenException('You are not a member of this project');
@@ -65,6 +68,29 @@ export class RolesGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  private cacheKey(projectId: number, userId: number): string {
+    return `project_member:${projectId}:${userId}`;
+  }
+
+  private async getMembership(
+    projectId: number,
+    userId: number,
+  ): Promise<ProjectMember | null> {
+    const key = this.cacheKey(projectId, userId);
+    const cached = await this.cache.get<ProjectMember | null>(key);
+
+    if (cached !== undefined) {
+      return cached; // cache hit — no DB query, including the "confirmed no membership" case
+    }
+
+    const membership = await this.projectMemberRepo.findOne({
+      where: { project_id: projectId, user_id: userId },
+    });
+
+    await this.cache.set(key, membership ?? null);
+    return membership;
   }
 
   private async resolveProjectId(

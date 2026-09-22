@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module.js';
 import { CommentsModule } from './comments/comments.module.js';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -32,6 +33,10 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
     ProjectsModule,
     UsersModule,
     CommentsModule,
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 30000, // 30 seconds — the TTL half of the two-mechanism design
+    }),
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],

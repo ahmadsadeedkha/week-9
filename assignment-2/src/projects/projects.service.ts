@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Project } from '../entities/Project.js';
@@ -7,6 +7,8 @@ import { UpdateProjectDto } from './dto/update-project.dto.js';
 import { User } from '../entities/User.js';
 import { ProjectMember } from '../entities/ProjectMember.js';
 import { ProjectRole } from '../entities/Enums.js';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { type Cache } from 'cache-manager';
 
 @Injectable()
 export class ProjectsService {
@@ -18,6 +20,7 @@ export class ProjectsService {
     @InjectRepository(ProjectMember)
     private readonly projectMemberRepo: Repository<ProjectMember>,
     private readonly dataSource: DataSource,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
   async create(dto: CreateProjectDto, ownerId: number): Promise<Project> {
@@ -39,6 +42,8 @@ export class ProjectsService {
         role: ProjectRole.OWNER,
       });
       await manager.save(membership);
+
+      await this.cache.del(`project_member:${savedProject.id}:${ownerId}`);
 
       return savedProject;
     });
